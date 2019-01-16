@@ -72,7 +72,7 @@ private:
     void     OnButtonDeleteClick( wxCommandEvent& aEvent );
     bool     InitColorSchemeFile( void );
     bool     GetColorsFromTempFile( const wxString& aScheme );
-    wxString GetCurrentColorSchemeFromFile( void );
+    wxString GetCurrentColorSchemeNameFromFile( void );
     bool     SetCurrentColorSchemeInTempFile( const wxString& aScheme );
     bool     ChangeColorSchemeInTempFile( const wxString& aKey, const wxString& aValue );
     bool     CopyColorSchemeInTempFile( const wxString& aNewScheme );
@@ -81,6 +81,7 @@ private:
 //    bool     CreateColorSchemeTempFile( void );
     bool     GetColorSchemeListFromFile( wxArrayString& aColorSchemeList );
     bool     SaveColorSchemeChangesToFile( void );
+    void     SetDefaultColors(void);
 
     virtual EDA_DRAW_FRAME* GetDrawFrame() { return m_drawFrame; }
 
