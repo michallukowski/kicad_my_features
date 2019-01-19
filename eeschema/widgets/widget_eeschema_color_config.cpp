@@ -342,6 +342,10 @@ wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeList()
                 new wxButton( this, wxID_ANY, _( "Delete" ), wxDefaultPosition, wxDefaultSize, 0 );
         retBoxSizer->Add( m_buttonDeleteColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
 
+        m_buttonMenu =
+                new wxButton( this, wxID_ANY, _( "Menu" ), wxDefaultPosition, wxDefaultSize, 0 );
+        retBoxSizer->Add( m_buttonMenu, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
+
         m_choiceColorScheme->Connect( wxEVT_COMMAND_CHOICE_SELECTED,
                 wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice ), NULL, this );
         m_buttonCoppyColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
@@ -349,9 +353,41 @@ wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeList()
         m_buttonDeleteColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
                 wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick ), NULL,
                 this );
+
+        m_buttonMenu->Connect( wxEVT_LEFT_DOWN,
+                wxMouseEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonMenuClick ),
+                NULL, this );
+
+        CreateMenu();
     }
 
     return retBoxSizer;
+}
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::CreateMenu( void )
+{
+    m_menu = std::make_unique<wxMenu>();
+    m_menuItemCopy = new wxMenuItem( m_menu.get(), wxID_ANY, wxString( _("Copy") ) , wxEmptyString, wxITEM_NORMAL );
+    m_menu->Append( m_menuItemCopy );
+
+    m_menuItemImport = new wxMenuItem( m_menu.get(), wxID_ANY, wxString( _("Import") ) , wxEmptyString, wxITEM_NORMAL );
+    m_menu->Append( m_menuItemImport );
+
+    m_menuItemExport = new wxMenuItem( m_menu.get(), wxID_ANY, wxString( _("Export") ) , wxEmptyString, wxITEM_NORMAL );
+    m_menu->Append( m_menuItemExport );
+
+    m_menu->AppendSeparator();
+
+    m_menuItemDelete = new wxMenuItem( m_menu.get(), wxID_ANY, wxString( _("Delete") ) , wxEmptyString, wxITEM_NORMAL );
+    m_menu->Append( m_menuItemDelete );
+
+    // Connect Events
+    m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick ), this,
+            m_menuItemCopy->GetId() );
+    m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick ), this,
+            m_menuItemDelete->GetId() );
 }
 
 
@@ -767,6 +803,24 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::SetDefaultColors(void)
 
     Refresh( false );
 }
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonMenuClick( wxMouseEvent &aEvent )
+{
+    int w, h;
+
+    m_buttonMenu->GetSize(&w, &h);
+
+//    wxString msg;
+//    msg.Printf("Pozycja przycisku   x = %d y = %d\n"
+//               "Pozycja myszki      a = %d b = %d", x,y,a,b);
+
+//    wxMessageBox(msg);
+    m_buttonMenu->PopupMenu( m_menu.get(), wxPoint(0, h) );
+    //m_buttonMenu->PopupMenu( m_menu.get(), aEvent.GetPosition() );
+}
+//event.GetPosition()
+
 
 PANEL_EESCHEMA_COLOR_CONFIG::PANEL_EESCHEMA_COLOR_CONFIG( EDA_DRAW_FRAME* aFrame,
                                                           wxWindow* aParent ) :

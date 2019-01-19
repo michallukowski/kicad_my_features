@@ -58,7 +58,14 @@ private:
     wxChoice*               m_choiceColorScheme;
     wxButton*               m_buttonCoppyColorScheme;
     wxButton*               m_buttonDeleteColorScheme;
+    wxButton*               m_buttonMenu;
+    std::unique_ptr<wxMenu>         m_menu;
     std::unique_ptr<wxFileConfig>   m_colorSchemeConfigFile;
+
+    wxMenuItem*             m_menuItemCopy;
+    wxMenuItem*             m_menuItemDelete;
+    wxMenuItem*             m_menuItemImport;
+    wxMenuItem*             m_menuItemExport;
 
     // Creates color scheme check list and sizers
     wxBoxSizer* CreateColorSchemeList();
@@ -82,6 +89,9 @@ private:
     bool     GetColorSchemeListFromFile( wxArrayString& aColorSchemeList );
     bool     SaveColorSchemeChangesToFile( void );
     void     SetDefaultColors(void);
+
+    void OnButtonMenuClick( wxMouseEvent &aEvent );
+    void CreateMenu( void );
 
     virtual EDA_DRAW_FRAME* GetDrawFrame() { return m_drawFrame; }
 
