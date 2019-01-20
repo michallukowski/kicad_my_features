@@ -35,6 +35,7 @@
 #include <dialogs/dialog_color_picker.h>
 
 #include <wx/filefn.h>
+#include <wx/stdpaths.h>
 
 //The names of the color scheme configuration files
 #define COLOR_SCHEME_FILE_NAME      wxT( "eeschema.colors" )
@@ -121,6 +122,136 @@ static BUTTONINDEX buttonGroups[] = {
 static COLORBUTTON bgColorButton = { "", "", LAYER_SCHEMATIC_BACKGROUND, COLOR4D( WHITE ) };
 
 static COLOR4D currentColors[ LAYER_ID_COUNT ];
+
+class COLOR_SCHEME_IMPORT_EXPORT_DIALOG : public wxDialog
+{
+private:
+    wxCheckListBox* m_listBox;
+
+    void onButtonCheckAll( wxCommandEvent& aEvent)
+    {
+        for( unsigned int i = 0; i < m_listBox->GetCount(); ++i)
+        {
+            m_listBox->Check(i);
+        }
+    }
+
+    void onButtonUncheckAll( wxCommandEvent& aEvent)
+    {
+        for( unsigned int i = 0; i < m_listBox->GetCount(); ++i)
+        {
+            m_listBox->Check(i, false);
+        }
+    }
+
+    void onClose( wxCloseEvent& aEvent )
+    {
+        EndModal( GetReturnCode() );
+    }
+
+public:
+    COLOR_SCHEME_IMPORT_EXPORT_DIALOG( wxWindow* aParent, const wxString& aTitle,
+            const wxString& aMsg, wxArrayString& aColorSchemeList )
+            : wxDialog( aParent, wxID_ANY, aTitle, wxDefaultPosition, wxDefaultSize,
+                      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
+    {
+        this->SetSizeHints( wxSize( 350, 200 ), wxSize( -1, 500 ) );
+
+        wxBoxSizer* bSizer0;
+        bSizer0 = new wxBoxSizer( wxVERTICAL );
+
+        wxBoxSizer* bSizer1;
+        bSizer1 = new wxBoxSizer( wxVERTICAL );
+
+        wxStaticText* m_staticText1 =
+                new wxStaticText( this, wxID_ANY, aMsg, wxDefaultPosition, wxDefaultSize, 0 );
+        m_staticText1->Wrap( -1 );
+        bSizer1->Add( m_staticText1, 0, wxALL, 10 );
+
+        bSizer0->Add( bSizer1, 0, wxEXPAND, 5 );
+
+        wxBoxSizer* bSizer2;
+        bSizer2 = new wxBoxSizer( wxHORIZONTAL );
+
+        wxButton* m_buttonCheckAll = new wxButton(
+                this, wxID_ANY, _( "Check All" ), wxDefaultPosition, wxDefaultSize, 0 );
+        bSizer2->Add( m_buttonCheckAll, 0, wxALL, 5 );
+
+        wxButton* m_buttonUncheckAll = new wxButton(
+                this, wxID_ANY, _( "Uncheck All" ), wxDefaultPosition, wxDefaultSize, 0 );
+        bSizer2->Add( m_buttonUncheckAll, 0, wxALL, 5 );
+
+        bSizer0->Add( bSizer2, 0, wxEXPAND, 5 );
+
+        wxBoxSizer* bSizer3;
+        bSizer3 = new wxBoxSizer( wxVERTICAL );
+
+        m_listBox = new wxCheckListBox(
+                this, wxID_ANY, wxDefaultPosition, wxDefaultSize, aColorSchemeList, 0 );
+        bSizer3->Add( m_listBox, 1, wxALL | wxEXPAND, 5 );
+
+        bSizer0->Add( bSizer3, 1, wxEXPAND, 5 );
+
+        wxBoxSizer* bSizer4;
+        bSizer4 = new wxBoxSizer( wxHORIZONTAL );
+
+        wxBoxSizer* bSizer5;
+        bSizer5 = new wxBoxSizer( wxVERTICAL );
+
+        wxStaticLine* m_staticline1 = new wxStaticLine(
+                this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+        bSizer5->Add( m_staticline1, 0, wxEXPAND | wxALL, 5 );
+
+        wxBoxSizer* bSizer6;
+        bSizer6 = new wxBoxSizer( wxHORIZONTAL );
+
+        wxButton* m_buttonOK = new wxButton(
+                this, wxID_OK, _( "OK" ), wxDefaultPosition, wxDefaultSize, 0 );
+        bSizer6->Add( m_buttonOK, 0, wxALIGN_BOTTOM | wxALIGN_RIGHT | wxALL, 5 );
+
+        wxButton* m_buttonCancel = new wxButton(
+                this, wxID_CANCEL, _( "Cancel" ), wxDefaultPosition, wxDefaultSize, 0 );
+        bSizer6->Add( m_buttonCancel, 0, wxALIGN_BOTTOM | wxALIGN_RIGHT | wxALL, 5 );
+
+        bSizer5->Add( bSizer6, 0, wxALIGN_BOTTOM | wxALIGN_RIGHT | wxRIGHT, 10 );
+        bSizer4->Add( bSizer5, 1, wxALIGN_BOTTOM, 5 );
+
+        bSizer0->Add( bSizer4, 0, wxEXPAND, 5 );
+
+        this->SetSizer( bSizer0 );
+        this->Layout();
+        bSizer0->Fit( this );
+
+        this->Centre( wxBOTH );
+
+        m_buttonCheckAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+                wxCommandEventHandler( COLOR_SCHEME_IMPORT_EXPORT_DIALOG::onButtonCheckAll ), NULL,
+                this );
+        m_buttonUncheckAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+                wxCommandEventHandler( COLOR_SCHEME_IMPORT_EXPORT_DIALOG::onButtonUncheckAll ),
+                NULL, this );
+        Connect( wxEVT_CLOSE_WINDOW,
+                wxCloseEventHandler( COLOR_SCHEME_IMPORT_EXPORT_DIALOG::onClose ), NULL, this );
+    }
+
+    wxArrayString GetCheckedColorSchemes( void )
+    {
+        unsigned int  count;
+        wxArrayString ret;
+
+        count = m_listBox->GetCount();
+
+        for( unsigned i = 0; i < count; ++i )
+        {
+            if( m_listBox->IsChecked( i ) )
+            {
+                ret.Add( m_listBox->GetString( i ) );
+            }
+        }
+
+        return ret;
+    }
+};
 
 
 WIDGET_EESCHEMA_COLOR_CONFIG::WIDGET_EESCHEMA_COLOR_CONFIG( wxWindow* aParent, EDA_DRAW_FRAME* aDrawFrame ) :
@@ -296,7 +427,6 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::TransferDataFromControl()
 
     SetLayerColor( currentColors[ LAYER_WORKSHEET ], (SCH_LAYER_ID) LAYER_WORKSHEET );
 
-    m_colorSchemeConfigFile->Flush();
     SaveColorSchemeChangesToFile();
 
     return true;
@@ -314,7 +444,7 @@ wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeList()
     if ( InitColorSchemeFile() )
     {
         arrayStringChoices.Add( _("Default") );
-        GetColorSchemeListFromFile( arrayStringChoices );
+        GetColorSchemeListFromFile( arrayStringChoices, m_colorSchemeConfigFile.get() );
 
         currentColorScheme = GetCurrentColorSchemeNameFromFile();
 
@@ -334,25 +464,12 @@ wxBoxSizer* WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeList()
         m_choiceColorScheme->SetSelection( selection );
         retBoxSizer->Add( m_choiceColorScheme, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
 
-        m_buttonCoppyColorScheme =
-                new wxButton( this, wxID_ANY, _( "Copy..." ), wxDefaultPosition, wxDefaultSize, 0 );
-        retBoxSizer->Add( m_buttonCoppyColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
-
-        m_buttonDeleteColorScheme =
-                new wxButton( this, wxID_ANY, _( "Delete" ), wxDefaultPosition, wxDefaultSize, 0 );
-        retBoxSizer->Add( m_buttonDeleteColorScheme, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
-
         m_buttonMenu =
                 new wxButton( this, wxID_ANY, _( "Menu" ), wxDefaultPosition, wxDefaultSize, 0 );
         retBoxSizer->Add( m_buttonMenu, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5 );
 
         m_choiceColorScheme->Connect( wxEVT_COMMAND_CHOICE_SELECTED,
                 wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice ), NULL, this );
-        m_buttonCoppyColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
-                wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick ), NULL, this );
-        m_buttonDeleteColorScheme->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
-                wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick ), NULL,
-                this );
 
         m_buttonMenu->Connect( wxEVT_LEFT_DOWN,
                 wxMouseEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonMenuClick ),
@@ -383,11 +500,18 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::CreateMenu( void )
 
     // Connect Events
     m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick ), this,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuCopyClick ), this,
             m_menuItemCopy->GetId() );
     m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
-            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick ), this,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuDeleteClick ), this,
             m_menuItemDelete->GetId() );
+    m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuExportClick ), this,
+            m_menuItemExport->GetId() );
+    m_menu->Bind( wxEVT_COMMAND_MENU_SELECTED,
+            wxCommandEventHandler( WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuImportClick ), this,
+            m_menuItemImport->GetId() );
+
 }
 
 
@@ -400,7 +524,7 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice( wxCommandEvent& event )
     if( selection > 0 )
     {
         scheme = choiceList->GetString( static_cast<unsigned int>( selection ) );
-        GetColorsFromTempFile( scheme );
+        GetColorsFromFile( scheme );
     }
     else
     {
@@ -409,7 +533,7 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::OnChoice( wxCommandEvent& event )
 }
 
 
-void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick( wxCommandEvent& event )
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuCopyClick( wxCommandEvent& event )
 {
     wxString msg = _( "Please enter a new name for the copied color scheme" );
     wxString textFromUser = wxEmptyString;
@@ -456,12 +580,10 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonCopyClick( wxCommandEvent& event )
     m_choiceColorScheme->SetSelection( static_cast<int>( m_choiceColorScheme->GetCount() - 1 ) );
 
     Refresh( false );
-
-    event.Skip();
 }
 
 
-void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick( wxCommandEvent& event )
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuDeleteClick( wxCommandEvent& aEvent )
 {
     int selection = m_choiceColorScheme->GetSelection();
 
@@ -490,9 +612,188 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonDeleteClick( wxCommandEvent& event )
             Refresh( false );
         }
     }
-
-    event.Skip();
 }
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonMenuClick( wxMouseEvent &aEvent )
+{
+    int w, h;
+
+    m_buttonMenu->GetSize( &w, &h );
+
+    m_buttonMenu->PopupMenu( m_menu.get(), wxPoint( 0, h ) );
+}
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuExportClick( wxCommandEvent& aEvent )
+{
+    wxArrayString schemes;
+
+    schemes = m_choiceColorScheme->GetStrings();
+    schemes.RemoveAt( 0 ); //Remove the Default color scheme from list
+
+    wxString titleDialog = _( "Export color scheme" );
+    wxString msgDialog = _( "Select the color schemes that you want to export to an external file:" );
+
+    COLOR_SCHEME_IMPORT_EXPORT_DIALOG exportDialog( this, titleDialog, msgDialog, schemes );
+
+    if( exportDialog.ShowModal() == wxID_OK )
+    {
+        wxString str;
+        size_t cnt = 0;
+
+        schemes = exportDialog.GetCheckedColorSchemes();
+        cnt = schemes.GetCount();
+
+        if( cnt )
+        {
+            wxString filePath = wxStandardPaths::Get().GetDocumentsDir();
+            wxString exampleName = wxT( "exported_" );
+            exampleName += COLOR_SCHEME_FILE_NAME;
+
+            wxFileDialog saveFileDialog( this, _( "Save exported color schemes" ), filePath,
+                    exampleName, "", wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+
+            if (saveFileDialog.ShowModal() == wxID_CANCEL)
+                return;
+
+            filePath = saveFileDialog.GetPath();
+
+            std::unique_ptr<wxFileConfig> extFileConf =
+                    std::make_unique<wxFileConfig>( wxEmptyString, wxEmptyString, filePath,
+                            wxEmptyString, wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH );
+
+            for( size_t i = 0; i < cnt; ++i )
+            {
+                ExportColorSchemeToFile( schemes[i], extFileConf.get() );
+            }
+        }
+
+    }
+}
+
+
+void WIDGET_EESCHEMA_COLOR_CONFIG::OnMenuImportClick( wxCommandEvent& aEvent )
+{
+    wxArrayString schemes;
+    wxString filePath = wxStandardPaths::Get().GetDocumentsDir();
+
+    wxFileDialog openFileDialog( this, _( "Import color schemes" ), filePath, "",
+            "Eeschema color scheme files (*.colors)|*.colors", wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+
+    if (openFileDialog.ShowModal() == wxID_CANCEL)
+        return;
+
+    filePath = openFileDialog.GetPath();
+
+    std::unique_ptr<wxFileConfig> extFileConf =
+            std::make_unique<wxFileConfig>( wxEmptyString, wxEmptyString, filePath,
+                    wxEmptyString, wxCONFIG_USE_LOCAL_FILE | wxCONFIG_USE_RELATIVE_PATH );
+
+    GetColorSchemeListFromFile( schemes, extFileConf.get());
+
+    wxString titleDialog = _( "Import color scheme" );
+    wxString msgDialog = _( "Select the color schemes that you want to import:" );
+
+    COLOR_SCHEME_IMPORT_EXPORT_DIALOG importDialog( this, titleDialog, msgDialog, schemes );
+
+    if( importDialog.ShowModal() == wxID_OK )
+    {
+        wxString str;
+        size_t cnt = 0;
+
+        schemes = importDialog.GetCheckedColorSchemes();
+        cnt = schemes.GetCount();
+
+        if( cnt )
+        {
+            for( size_t i = 0; i < cnt; ++i )
+            {
+                ImportColorSchemeFromFile( schemes[i], extFileConf.get() );
+            }
+        }
+    }
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::ExportColorSchemeToFile(
+        const wxString& aSchemeToExport, wxFileConfig* aFile )
+{
+    bool retVal = true;
+
+    m_colorSchemeConfigFile->SetPath( '/' + aSchemeToExport );
+    aFile->SetPath( '/' + aSchemeToExport );
+
+    BUTTONINDEX* groups = buttonGroups;
+
+    while( groups->m_Buttons != NULL )
+    {
+        COLORBUTTON* buttons = groups->m_Buttons;
+
+        while( buttons->m_Layer >= 0 )
+        {
+            wxString rgbString;
+
+            m_colorSchemeConfigFile->Read( buttons->m_ConfigName, &rgbString );
+            retVal &= aFile->Write( buttons->m_ConfigName, rgbString );
+
+            buttons++;
+        }
+
+        groups++;
+    }
+
+    return retVal;
+}
+
+
+bool WIDGET_EESCHEMA_COLOR_CONFIG::ImportColorSchemeFromFile(
+        const wxString& aSchemeToImport, wxFileConfig* aFile )
+{
+    //TODO Add beter data verification
+    bool retVal = true;
+    wxString      configGroup = '/' + aSchemeToImport;
+
+
+    if( m_colorSchemeConfigFile->HasGroup( configGroup ) )
+    {
+        wxString msg = _( " : a color scheme with this name already exists.\n"
+                          "The current color scheme will be replaced.\n"
+                          "Are you sure you want to import this color scheme?" );
+
+        if( wxMessageBox( aSchemeToImport + msg,  _( "Warning" ), wxYES_NO | wxICON_QUESTION, this ) == wxNO )
+        {
+            return false;
+        }
+    }
+
+    m_colorSchemeConfigFile->SetPath( configGroup );
+    aFile->SetPath( configGroup );
+
+    BUTTONINDEX* groups = buttonGroups;
+
+    while( groups->m_Buttons != NULL )
+    {
+        COLORBUTTON* buttons = groups->m_Buttons;
+
+        while( buttons->m_Layer >= 0 )
+        {
+            wxString rgbString;
+
+            aFile->Read( buttons->m_ConfigName, &rgbString );
+            retVal &= m_colorSchemeConfigFile->Write( buttons->m_ConfigName, rgbString );
+
+            buttons++;
+        }
+
+        groups++;
+    }
+
+    m_choiceColorScheme->Append( aSchemeToImport );
+
+    return retVal;
+}
+
 
 
 bool WIDGET_EESCHEMA_COLOR_CONFIG::InitColorSchemeFile( void )
@@ -528,7 +829,7 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::InitColorSchemeFile( void )
 }
 
 
-bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorsFromTempFile( const wxString& aScheme )
+bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorsFromFile( const wxString& aScheme )
 {
     int           buttonId = BUTTON_ID_START;
     BUTTONINDEX*  groups = buttonGroups;
@@ -706,16 +1007,17 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::CreateColorSchemeFile(const wxString& aFilePa
 }
 
 
-bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorSchemeListFromFile( wxArrayString& aColorSchemeList )
+bool WIDGET_EESCHEMA_COLOR_CONFIG::GetColorSchemeListFromFile(
+        wxArrayString& aColorSchemeList, wxFileConfig* aFile )
 {
     wxString      group;
     long          index = 0;
 
-    if( m_colorSchemeConfigFile->GetFirstGroup( group, index ) )
+    if( aFile->GetFirstGroup( group, index ) )
     {
         aColorSchemeList.Add( group );
 
-        while( m_colorSchemeConfigFile->GetNextGroup( group, index ) )
+        while( aFile->GetNextGroup( group, index ) )
         {
             aColorSchemeList.Add( group );
         }
@@ -735,6 +1037,8 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::SaveColorSchemeChangesToFile()
     wxString    configPath = wxEmptyString;
     wxFileName  fileName;
 
+    m_colorSchemeConfigFile->Flush();
+
     fileName.AssignDir( GetKicadConfigPath() );
     fileName.SetFullName( COLOR_SCHEME_FILE_NAME );
 
@@ -742,7 +1046,6 @@ bool WIDGET_EESCHEMA_COLOR_CONFIG::SaveColorSchemeChangesToFile()
 
     fileName.SetFullName( COLOR_SCHEME_TEMP_FILE_NAME );
     wxString tempFilePath = fileName.GetFullPath();
-
 
     retVal = wxCopyFile(tempFilePath, filePath);
     //wxRemoveFile(m_colorSchemeTempFile);
@@ -805,23 +1108,6 @@ void WIDGET_EESCHEMA_COLOR_CONFIG::SetDefaultColors(void)
 }
 
 
-void WIDGET_EESCHEMA_COLOR_CONFIG::OnButtonMenuClick( wxMouseEvent &aEvent )
-{
-    int w, h;
-
-    m_buttonMenu->GetSize(&w, &h);
-
-//    wxString msg;
-//    msg.Printf("Pozycja przycisku   x = %d y = %d\n"
-//               "Pozycja myszki      a = %d b = %d", x,y,a,b);
-
-//    wxMessageBox(msg);
-    m_buttonMenu->PopupMenu( m_menu.get(), wxPoint(0, h) );
-    //m_buttonMenu->PopupMenu( m_menu.get(), aEvent.GetPosition() );
-}
-//event.GetPosition()
-
-
 PANEL_EESCHEMA_COLOR_CONFIG::PANEL_EESCHEMA_COLOR_CONFIG( EDA_DRAW_FRAME* aFrame,
                                                           wxWindow* aParent ) :
     wxPanel( aParent )
@@ -832,6 +1118,7 @@ PANEL_EESCHEMA_COLOR_CONFIG::PANEL_EESCHEMA_COLOR_CONFIG( EDA_DRAW_FRAME* aFrame
     m_colorConfig = new WIDGET_EESCHEMA_COLOR_CONFIG( this, aFrame );
     sizer->Add( m_colorConfig, 1, wxEXPAND | wxLEFT | wxRIGHT, 5 );
 }
+
 
 
 bool PANEL_EESCHEMA_COLOR_CONFIG::TransferDataToWindow()

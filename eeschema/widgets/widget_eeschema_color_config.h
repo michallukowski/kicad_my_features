@@ -56,8 +56,6 @@ private:
 
     wxStaticText*           m_labelColorScheme;
     wxChoice*               m_choiceColorScheme;
-    wxButton*               m_buttonCoppyColorScheme;
-    wxButton*               m_buttonDeleteColorScheme;
     wxButton*               m_buttonMenu;
     std::unique_ptr<wxMenu>         m_menu;
     std::unique_ptr<wxFileConfig>   m_colorSchemeConfigFile;
@@ -75,10 +73,10 @@ private:
     void    SetColor( wxCommandEvent& aEvent );
 
     void     OnChoice( wxCommandEvent& aEvent );
-    void     OnButtonCopyClick( wxCommandEvent& aEvent );
-    void     OnButtonDeleteClick( wxCommandEvent& aEvent );
+    void     OnMenuCopyClick( wxCommandEvent& aEvent );
+    void     OnMenuDeleteClick( wxCommandEvent& aEvent );
     bool     InitColorSchemeFile( void );
-    bool     GetColorsFromTempFile( const wxString& aScheme );
+    bool     GetColorsFromFile( const wxString& aScheme );
     wxString GetCurrentColorSchemeNameFromFile( void );
     bool     SetCurrentColorSchemeInTempFile( const wxString& aScheme );
     bool     ChangeColorSchemeInTempFile( const wxString& aKey, const wxString& aValue );
@@ -86,12 +84,17 @@ private:
     bool     DeleteColorSchemeInTempFile( const wxString& aDeletedScheme );
     bool     CreateColorSchemeFile( const wxString& aFilePath );
 //    bool     CreateColorSchemeTempFile( void );
-    bool     GetColorSchemeListFromFile( wxArrayString& aColorSchemeList );
+    bool     GetColorSchemeListFromFile( wxArrayString& aColorSchemeList, wxFileConfig * aFile );
     bool     SaveColorSchemeChangesToFile( void );
     void     SetDefaultColors(void);
 
-    void OnButtonMenuClick( wxMouseEvent &aEvent );
+    void OnButtonMenuClick( wxMouseEvent & aEvent );
+    void OnMenuExportClick( wxCommandEvent& aEvent );
+    void OnMenuImportClick( wxCommandEvent& aEvent );
     void CreateMenu( void );
+    bool ExportColorSchemeToFile( const wxString& aSchemeToExport, wxFileConfig * aFile );
+    bool ImportColorSchemeFromFile( const wxString& aSchemeToImport, wxFileConfig * aFile );
+//    bool ImportColorSchemeListFromFile( wxArrayString& schemeList, wxFileConfig * fromFile );
 
     virtual EDA_DRAW_FRAME* GetDrawFrame() { return m_drawFrame; }
 
@@ -114,5 +117,7 @@ protected:
 
     WIDGET_EESCHEMA_COLOR_CONFIG* m_colorConfig;
 };
+
+
 
 #endif    // WIDGET_EESCHEMA_COLOR_CONFIG_H_
