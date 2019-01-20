@@ -672,7 +672,7 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
 
     auto& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector )
-            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED | EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); } );
+            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); }, nullptr, ! m_dragging );
 
     if( selection.Empty() )
         return 0;
@@ -731,6 +731,9 @@ static void mirrorPadX( D_PAD& aPad, const wxPoint& aMirrorPoint )
 {
     wxPoint tmpPt = mirrorPointX( aPad.GetPosition(), aMirrorPoint );
 
+    if( aPad.GetShape() == PAD_SHAPE_CUSTOM )
+        aPad.MirrorXPrimitives( tmpPt.x );
+
     aPad.SetPosition( tmpPt );
 
     aPad.SetX0( aPad.GetPosition().x );
@@ -751,7 +754,7 @@ int EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
 {
     auto& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector )
-            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED | EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); } );
+            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); }, nullptr, ! m_dragging ); 
 
     if( selection.Empty() )
         return 0;
@@ -833,7 +836,7 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
 {
     auto& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector )
-            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED | EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); } );
+            { EditToolSelectionFilter( aCollector, EXCLUDE_LOCKED_PADS | EXCLUDE_TRANSIENTS ); }, nullptr, ! m_dragging );
 
     if( selection.Empty() )
         return 0;
@@ -877,7 +880,7 @@ int EDIT_TOOL::Remove( const TOOL_EVENT& aEvent )
 
     // Do not delete items while actively routing.
     if( routerTool && routerTool->Router() && routerTool->Router()->RoutingInProgress() )
-        return 0;
+        return 1;
 
     std::vector<BOARD_ITEM*> lockedItems;
 
